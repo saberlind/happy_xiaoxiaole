@@ -11,13 +11,11 @@ on:
 
 # 设置权限
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# 并发控制
+# 确保同时只有一个部署在运行
 concurrency:
-  group: "pages"
+  group: "gh-pages"
   cancel-in-progress: false
 
 jobs:
@@ -64,29 +62,15 @@ jobs:
         echo "📏 文件大小:"
         du -h dist/*
         
-    - name: 🔧 设置 GitHub Pages
-      uses: actions/configure-pages@v4
-      
-    - name: 📤 上传构建产物
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: './dist'
-
-  # 部署作业
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    
-    steps:
     - name: 🚀 部署到 GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
-      
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        publish_branch: gh-pages
+        
     - name: 🎉 部署完成通知
       run: |
         echo "✅ 部署成功！"
-        echo "🌐 网站地址: ${{ steps.deployment.outputs.page_url }}"
+        echo "🌐 网站将在几分钟后可用"
         echo "⏰ 更新可能需要几分钟时间生效"
