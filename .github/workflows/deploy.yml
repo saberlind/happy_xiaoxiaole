@@ -55,6 +55,10 @@ jobs:
           echo "✅ 文件复制完成"
         fi
         
+        # 添加.nojekyll文件避免Jekyll处理
+        touch dist/.nojekyll
+        echo "📄 已添加.nojekyll文件"
+        
     - name: 📋 验证构建结果
       run: |
         echo "📊 构建目录内容:"
