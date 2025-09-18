@@ -24,9 +24,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/happy-crush-deluxe.git"
+    "url": "https://github.com/saberlind/happy_xiaoxiaole.git"
   },
-  "homepage": "https://yourusername.github.io/happy-crush-deluxe",
+  "homepage": "https://saberlind.github.io/happy_xiaoxiaole",
   "engines": {
     "node": ">=14.0.0"
   }
