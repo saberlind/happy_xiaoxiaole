@@ -66,6 +66,8 @@ jobs:
         
     - name: 🔧 设置 GitHub Pages
       uses: actions/configure-pages@v4
+      with:
+        enablement: true
       
     - name: 📤 上传构建产物
       uses: actions/upload-pages-artifact@v3
