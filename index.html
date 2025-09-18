@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="x5-orientation" content="portrait">
+    <meta name="screen-orientation" content="portrait">
+    <meta name="x5-fullscreen" content="true">
+    <meta name="full-screen" content="yes">
+    <title>开心消消乐 - 豪华版</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- 主菜单界面 -->
+        <div id="main-menu" class="screen">
+            <div class="menu-header">
+                <h1 class="game-title">
+                    <span class="title-icon">🍎</span>
+                    开心消消乐
+                    <span class="title-subtitle">豪华版</span>
+                </h1>
+                <div class="game-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">最高分</span>
+                        <span id="high-score" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">完成关卡</span>
+                        <span id="completed-levels" class="stat-value">0/20</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="level-grid">
+                <!-- 第一页关卡 (1-10) -->
+                <div class="level-page active" id="page-1">
+                    <div class="level-row">
+                        <button class="level-btn" data-level="1" onclick="selectLevel(1)">
+                            <span class="level-number">1</span>
+                            <span class="level-description">达到1000分</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                        <button class="level-btn locked" data-level="2" onclick="selectLevel(2)">
+                            <span class="level-number">2</span>
+                            <span class="level-description">消除20个苹果</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                    </div>
+                    <div class="level-row">
+                        <button class="level-btn locked" data-level="3" onclick="selectLevel(3)">
+                            <span class="level-number">3</span>
+                            <span class="level-description">20步内2000分</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                        <button class="level-btn locked" data-level="4" onclick="selectLevel(4)">
+                            <span class="level-number">4</span>
+                            <span class="level-description">突破15个冰层</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                    </div>
+                    <div class="level-row">
+                        <button class="level-btn locked" data-level="5" onclick="selectLevel(5)">
+                            <span class="level-number">5</span>
+                            <span class="level-description">炸弹达到3000分</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                        <button class="level-btn locked" data-level="6" onclick="selectLevel(6)">
+                            <span class="level-number">6</span>
+                            <span class="level-description">突破10个锁链</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                    </div>
+                    <div class="level-row">
+                        <button class="level-btn locked" data-level="7" onclick="selectLevel(7)">
+                            <span class="level-number">7</span>
+                            <span class="level-description">15步消除30个葡萄</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                        <button class="level-btn locked" data-level="8" onclick="selectLevel(8)">
+                            <span class="level-number">8</span>
+                            <span class="level-description">20步内5000分</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                    </div>
+                    <div class="level-row">
+                        <button class="level-btn locked" data-level="9" onclick="selectLevel(9)">
+                            <span class="level-number">9</span>
+                            <span class="level-description">消除25个樱桃</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                        <button class="level-btn locked" data-level="10" onclick="selectLevel(10)">
+                            <span class="level-number">10</span>
+                            <span class="level-description">连击挑战6000分</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 第二页关卡 (11-20) -->
+                <div class="level-page" id="page-2">
+                    <div class="level-row">
+                        <button class="level-btn locked" data-level="11" onclick="selectLevel(11)">
+                            <span class="level-number">11</span>
+                            <span class="level-description">冰雪世界</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                        <button class="level-btn locked" data-level="12" onclick="selectLevel(12)">
+                            <span class="level-number">12</span>
+                            <span class="level-description">彩虹之路</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                    </div>
+                    <div class="level-row">
+                        <button class="level-btn locked" data-level="13" onclick="selectLevel(13)">
+                            <span class="level-number">13</span>
+                            <span class="level-description">柠檬挑战</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                        <button class="level-btn locked" data-level="14" onclick="selectLevel(14)">
+                            <span class="level-number">14</span>
+                            <span class="level-description">锁链迷宫</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                    </div>
+                    <div class="level-row">
+                        <button class="level-btn locked" data-level="15" onclick="selectLevel(15)">
+                            <span class="level-number">15</span>
+                            <span class="level-description">万分挑战</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                        <button class="level-btn locked" data-level="16" onclick="selectLevel(16)">
+                            <span class="level-number">16</span>
+                            <span class="level-description">西瓜派对</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                    </div>
+                    <div class="level-row">
+                        <button class="level-btn locked" data-level="17" onclick="selectLevel(17)">
+                            <span class="level-number">17</span>
+                            <span class="level-description">闪电风暴</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                        <button class="level-btn locked" data-level="18" onclick="selectLevel(18)">
+                            <span class="level-number">18</span>
+                            <span class="level-description">极地探险</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                    </div>
+                    <div class="level-row">
+                        <button class="level-btn locked" data-level="19" onclick="selectLevel(19)">
+                            <span class="level-number">19</span>
+                            <span class="level-description">终极挑战</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                        <button class="level-btn locked" data-level="20" onclick="selectLevel(20)">
+                            <span class="level-number">20</span>
+                            <span class="level-description">传奇大师</span>
+                            <div class="difficulty-stars"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 分页导航 -->
+            <div class="page-navigation">
+                <button class="page-btn active" onclick="showPage(1)">1-10</button>
+                <button class="page-btn" onclick="showPage(2)">11-20</button>
+            </div>
+            
+            <div class="menu-actions">
+                <button class="action-btn primary" onclick="startSelectedLevel()">
+                    <i class="fas fa-play"></i>
+                    开始游戏
+                </button>
+                <button class="action-btn secondary" onclick="showHelp()">
+                    <i class="fas fa-question-circle"></i>
+                    游戏帮助
+                </button>
+            </div>
+        </div>
+
+        <!-- 游戏界面 -->
+        <div id="game-screen" class="screen" style="display: none;">
+            <div class="game-header">
+                <div class="game-info">
+                    <h2 id="level-title">关卡 1</h2>
+                    <p id="level-target" class="level-target">达到1000分</p>
+                </div>
+                <div class="game-stats-row">
+                    <div class="stat-box">
+                        <span class="stat-label">分数</span>
+                        <span id="current-score" class="stat-value">0</span>
+                    </div>
+                    <div class="stat-box">
+                        <span class="stat-label">步数</span>
+                        <span id="moves-left" class="stat-value">30</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-board-container">
+                <div id="game-board" class="game-board"></div>
+            </div>
+            
+            <div class="game-controls">
+                <button class="control-btn" onclick="shuffleBoard()" title="洗牌">
+                    <i class="fas fa-random"></i>
+                </button>
+                <button class="control-btn" onclick="pauseGame()" title="暂停">
+                    <i class="fas fa-pause"></i>
+                </button>
+                <button class="control-btn" onclick="restartLevel()" title="重新开始">
+                    <i class="fas fa-redo"></i>
+                </button>
+                <button class="control-btn" onclick="backToMenu()" title="返回菜单">
+                    <i class="fas fa-home"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 关卡完成弹窗 -->
+        <div id="level-complete" class="modal" style="display: none;">
+            <div class="modal-content level-complete-content">
+                <h2 id="complete-title">关卡完成!</h2>
+                <p id="complete-message">恭喜完成关卡!</p>
+                
+                <div class="score-display">
+                    <span class="score-label">最终分数</span>
+                    <span id="final-score" class="final-score">0</span>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="modal-btn secondary" onclick="backToMenu()">
+                        <i class="fas fa-home"></i>
+                        返回菜单
+                    </button>
+                    <button class="modal-btn primary" onclick="nextLevel()">
+                        <i class="fas fa-arrow-right"></i>
+                        下一关
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 底部文字 -->
+        <div class="footer-text">
+            <p>🎮 开心消消乐豪华版 - 享受消除的乐趣！</p>
+        </div>
+    </div> <!-- 关闭游戏容器 -->
+    
+    <script src="game.js"></script>
+    <script>
+        // 分页功能
+        function showPage(pageNum) {
+            // 隐藏所有页面
+            document.querySelectorAll('.level-page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // 显示指定页面
+            document.getElementById(`page-${pageNum}`).classList.add('active');
+            
+            // 更新导航按钮状态
+            document.querySelectorAll('.page-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        // 音效开关
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            saveGameData();
+            
+            const btn = event.target;
+            btn.innerHTML = gameState.soundEnabled ? 
+                '<i class="fas fa-volume-up"></i>' : 
+                '<i class="fas fa-volume-mute"></i>';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+name: Deploy to GitHub Pages
+
+# 触发条件
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  # 允许手动触发
+  workflow_dispatch:
+
+# 设置权限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 并发控制
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # 构建作业
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 🟢 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📦 安装依赖
+      run: |
+        if [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
+        
+    - name: 🏗️ 构建项目
+      run: |
+        # 如果没有build脚本，直接复制文件
+        if npm run build 2>/dev/null; then
+          echo "✅ 使用npm构建完成"
+        else
+          echo "📁 直接复制文件到dist目录"
+          mkdir -p dist
+          cp index.html dist/
+          cp styles.css dist/
+          cp game.js dist/
+          echo "✅ 文件复制完成"
+        fi
+        
+    - name: 📋 验证构建结果
+      run: |
+        echo "📊 构建目录内容:"
+        ls -la dist/
+        echo "📏 文件大小:"
+        du -h dist/*
+        
+    - name: 🔧 设置 GitHub Pages
+      uses: actions/configure-pages@v4
+      
+    - name: 📤 上传构建产物
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: './dist'
+
+  # 部署作业
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: 🚀 部署到 GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
+      
+    - name: 🎉 部署完成通知
+      run: |
+        echo "✅ 部署成功！"
+        echo "🌐 网站地址: ${{ steps.deployment.outputs.page_url }}"
+        echo "⏰ 更新可能需要几分钟时间生效"

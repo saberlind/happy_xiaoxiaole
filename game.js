@@ -1,0 +1,973 @@
+// 开心消消乐 - 豪华版游戏逻辑
+
+// 游戏状态
+let gameState = {
+    currentLevel: 1,
+    selectedLevel: 1,
+    score: 0,
+    moves: 30,
+    board: [],
+    selectedCell: null,
+    isGameActive: false,
+    completedLevels: new Set(),
+    highScore: 0,
+    combo: 0,
+    maxCombo: 0,
+    stars: 0,
+    // 滑动相关状态
+    touchStart: null,
+    touchEnd: null,
+    isDragging: false,
+    dragStartCell: null,
+    // 音效状态
+    soundEnabled: true,
+    // 特殊道具
+    powerUps: {
+        bomb: 0,
+        lightning: 0,
+        rainbow: 0
+    }
+};
+
+// 水果类型（扩展）
+const FRUITS = {
+    APPLE: { symbol: '🍎', class: 'fruit-apple', name: 'apple', points: 10 },
+    ORANGE: { symbol: '🍊', class: 'fruit-orange', name: 'orange', points: 10 },
+    BANANA: { symbol: '🍌', class: 'fruit-banana', name: 'banana', points: 10 },
+    GRAPE: { symbol: '🍇', class: 'fruit-grape', name: 'grape', points: 10 },
+    STRAWBERRY: { symbol: '🍓', class: 'fruit-strawberry', name: 'strawberry', points: 10 },
+    CHERRY: { symbol: '🍒', class: 'fruit-cherry', name: 'cherry', points: 15 },
+    LEMON: { symbol: '🍋', class: 'fruit-lemon', name: 'lemon', points: 15 },
+    WATERMELON: { symbol: '🍉', class: 'fruit-watermelon', name: 'watermelon', points: 20 },
+    BOMB: { symbol: '💣', class: 'fruit-bomb', name: 'bomb', points: 50 },
+    RAINBOW: { symbol: '🌈', class: 'fruit-rainbow', name: 'rainbow', points: 100 },
+    LIGHTNING: { symbol: '⚡', class: 'fruit-lightning', name: 'lightning', points: 75 }
+};
+
+// 障碍物类型
+const OBSTACLES = {
+    ICE: { symbol: '❄️', class: 'obstacle-ice', name: 'ice', health: 2 },
+    CHAIN: { symbol: '⛓️', class: 'obstacle-chain', name: 'chain', health: 1 }
+};
+
+// 扩展关卡配置（20个关卡）
+const LEVELS = {
+    1: { target: 1000, moves: 30, targetType: 'score', description: '达到1000分', difficulty: 1, fruits: ['apple', 'orange', 'banana', 'grape'] },
+    2: { target: 20, moves: 25, targetType: 'apple', description: '消除20个苹果', difficulty: 1, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry'] },
+    3: { target: 2000, moves: 20, targetType: 'score', description: '20步内2000分', difficulty: 2, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry'] },
+    4: { target: 15, moves: 25, targetType: 'ice', description: '突破15个冰层', difficulty: 2, fruits: ['apple', 'orange', 'banana', 'grape'], obstacles: ['ice'] },
+    5: { target: 3000, moves: 20, targetType: 'score', description: '利用炸弹达到3000分', difficulty: 2, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry', 'bomb'] },
+    6: { target: 10, moves: 20, targetType: 'chain', description: '突破10个锁链', difficulty: 3, fruits: ['apple', 'orange', 'banana', 'grape'], obstacles: ['chain'] },
+    7: { target: 30, moves: 15, targetType: 'grape', description: '15步内消除30个葡萄', difficulty: 3, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry'] },
+    8: { target: 5000, moves: 20, targetType: 'score', description: '20步内5000分', difficulty: 3, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry', 'cherry'] },
+    9: { target: 25, moves: 18, targetType: 'cherry', description: '消除25个樱桃', difficulty: 3, fruits: ['apple', 'orange', 'banana', 'grape', 'cherry'] },
+    10: { target: 6000, moves: 22, targetType: 'score', description: '连击挑战6000分', difficulty: 4, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry', 'cherry', 'lemon'] },
+    11: { target: 20, moves: 16, targetType: 'ice', description: '冰雪世界', difficulty: 4, fruits: ['apple', 'orange', 'banana', 'grape'], obstacles: ['ice'] },
+    12: { target: 8000, moves: 25, targetType: 'score', description: '彩虹之路', difficulty: 4, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry', 'cherry', 'rainbow'] },
+    13: { target: 35, moves: 20, targetType: 'lemon', description: '柠檬挑战', difficulty: 4, fruits: ['apple', 'orange', 'banana', 'grape', 'lemon'] },
+    14: { target: 15, moves: 18, targetType: 'chain', description: '锁链迷宫', difficulty: 5, fruits: ['apple', 'orange', 'banana', 'grape'], obstacles: ['chain'] },
+    15: { target: 10000, moves: 30, targetType: 'score', description: '万分挑战', difficulty: 5, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry', 'cherry', 'lemon', 'watermelon'] },
+    16: { target: 20, moves: 15, targetType: 'watermelon', description: '西瓜派对', difficulty: 5, fruits: ['apple', 'orange', 'banana', 'grape', 'watermelon'] },
+    17: { target: 12000, moves: 25, targetType: 'score', description: '闪电风暴', difficulty: 5, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry', 'lightning'] },
+    18: { target: 25, moves: 20, targetType: 'ice', description: '极地探险', difficulty: 6, fruits: ['apple', 'orange', 'banana', 'grape'], obstacles: ['ice', 'chain'] },
+    19: { target: 15000, moves: 30, targetType: 'score', description: '终极挑战', difficulty: 6, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry', 'cherry', 'lemon', 'watermelon', 'bomb'] },
+    20: { target: 20000, moves: 35, targetType: 'score', description: '传奇大师', difficulty: 6, fruits: ['apple', 'orange', 'banana', 'grape', 'strawberry', 'cherry', 'lemon', 'watermelon', 'bomb', 'rainbow', 'lightning'] }
+};
+
+// 音效系统
+class SoundManager {
+    constructor() {
+        this.sounds = {};
+        this.initSounds();
+    }
+
+    initSounds() {
+        // 使用Web Audio API创建简单音效
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    playSound(type) {
+        if (!gameState.soundEnabled) return;
+        
+        const oscillator = this.audioContext.createOscillator();
+        const gainNode = this.audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(this.audioContext.destination);
+        
+        switch(type) {
+            case 'match':
+                oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(880, this.audioContext.currentTime + 0.1);
+                break;
+            case 'combo':
+                oscillator.frequency.setValueAtTime(660, this.audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1320, this.audioContext.currentTime + 0.2);
+                break;
+            case 'bomb':
+                oscillator.frequency.setValueAtTime(100, this.audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(50, this.audioContext.currentTime + 0.3);
+                break;
+            case 'complete':
+                oscillator.frequency.setValueAtTime(523, this.audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(659, this.audioContext.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(784, this.audioContext.currentTime + 0.2);
+                break;
+        }
+        
+        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+        
+        oscillator.start(this.audioContext.currentTime);
+        oscillator.stop(this.audioContext.currentTime + 0.3);
+    }
+}
+
+const soundManager = new SoundManager();
+
+// 粒子效果系统
+class ParticleSystem {
+    constructor() {
+        this.particles = [];
+        this.createParticleContainer();
+        this.animate();
+    }
+
+    createParticleContainer() {
+        const container = document.createElement('div');
+        container.className = 'particles';
+        document.body.appendChild(container);
+        this.container = container;
+        
+        // 创建背景粒子
+        for (let i = 0; i < 20; i++) {
+            this.createBackgroundParticle();
+        }
+    }
+
+    createBackgroundParticle() {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+        this.container.appendChild(particle);
+    }
+
+    createMatchEffect(x, y, color) {
+        for (let i = 0; i < 8; i++) {
+            const particle = document.createElement('div');
+            particle.style.position = 'fixed';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            particle.style.width = '6px';
+            particle.style.height = '6px';
+            particle.style.background = color;
+            particle.style.borderRadius = '50%';
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '1000';
+            
+            const angle = (i / 8) * Math.PI * 2;
+            const velocity = 50 + Math.random() * 30;
+            const vx = Math.cos(angle) * velocity;
+            const vy = Math.sin(angle) * velocity;
+            
+            document.body.appendChild(particle);
+            
+            let posX = x;
+            let posY = y;
+            let opacity = 1;
+            
+            const animate = () => {
+                posX += vx * 0.02;
+                posY += vy * 0.02;
+                opacity -= 0.02;
+                
+                particle.style.left = posX + 'px';
+                particle.style.top = posY + 'px';
+                particle.style.opacity = opacity;
+                
+                if (opacity > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    document.body.removeChild(particle);
+                }
+            };
+            
+            requestAnimationFrame(animate);
+        }
+    }
+
+    animate() {
+        // 持续动画循环
+        requestAnimationFrame(() => this.animate());
+    }
+}
+
+const particleSystem = new ParticleSystem();
+
+// 初始化游戏
+function initGame() {
+    loadGameData();
+    updateUI();
+    setupWeChatCompatibility();
+}
+
+// 加载游戏数据
+function loadGameData() {
+    const saved = localStorage.getItem('xxl-game-data');
+    if (saved) {
+        const data = JSON.parse(saved);
+        gameState.completedLevels = new Set(data.completedLevels || []);
+        gameState.highScore = data.highScore || 0;
+        gameState.soundEnabled = data.soundEnabled !== false;
+    }
+}
+
+// 保存游戏数据
+function saveGameData() {
+    const data = {
+        completedLevels: Array.from(gameState.completedLevels),
+        highScore: gameState.highScore,
+        soundEnabled: gameState.soundEnabled
+    };
+    localStorage.setItem('xxl-game-data', JSON.stringify(data));
+}
+
+// 更新UI
+function updateUI() {
+    document.getElementById('high-score').textContent = gameState.highScore.toLocaleString();
+    document.getElementById('completed-levels').textContent = `${gameState.completedLevels.size}/20`;
+    
+    // 更新关卡按钮状态
+    for (let i = 1; i <= 20; i++) {
+        const btn = document.querySelector(`[data-level="${i}"]`);
+        if (!btn) continue;
+        
+        if (gameState.completedLevels.has(i)) {
+            btn.classList.add('completed');
+            btn.classList.remove('locked');
+        } else if (i === 1 || gameState.completedLevels.has(i - 1)) {
+            btn.classList.remove('locked');
+        } else {
+            btn.classList.add('locked');
+        }
+        
+        // 添加难度星级
+        const starsContainer = btn.querySelector('.difficulty-stars');
+        if (starsContainer) {
+            const difficulty = LEVELS[i].difficulty;
+            starsContainer.innerHTML = '';
+            for (let j = 1; j <= 6; j++) {
+                const star = document.createElement('div');
+                star.className = `difficulty-star ${j <= difficulty ? 'active' : ''}`;
+                starsContainer.appendChild(star);
+            }
+        }
+    }
+}
+
+// 选择关卡
+function selectLevel(level) {
+    const btn = document.querySelector(`[data-level="${level}"]`);
+    if (btn.classList.contains('locked')) return;
+    
+    gameState.selectedLevel = level;
+    
+    // 更新选中状态
+    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+// 开始选中的关卡
+function startSelectedLevel() {
+    startLevel(gameState.selectedLevel);
+}
+
+// 开始关卡
+function startLevel(level) {
+    gameState.currentLevel = level;
+    gameState.score = 0;
+    gameState.moves = LEVELS[level].moves;
+    gameState.isGameActive = true;
+    gameState.combo = 0;
+    gameState.maxCombo = 0;
+    gameState.stars = 0;
+    
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('game-screen').style.display = 'block';
+    
+    document.getElementById('level-title').textContent = `关卡 ${level}`;
+    document.getElementById('level-target').textContent = LEVELS[level].description;
+    
+    initBoard();
+    updateGameUI();
+}
+
+// 初始化游戏面板
+function initBoard() {
+    const board = document.getElementById('game-board');
+    board.innerHTML = '';
+    gameState.board = [];
+    
+    const level = LEVELS[gameState.currentLevel];
+    
+    // 创建8x8的游戏面板
+    for (let row = 0; row < 8; row++) {
+        gameState.board[row] = [];
+        for (let col = 0; col < 8; col++) {
+            const cell = document.createElement('div');
+            cell.className = 'game-cell';
+            cell.dataset.row = row;
+            cell.dataset.col = col;
+            
+            // 添加点击事件
+            cell.onclick = () => cellClick(row, col);
+            
+            // 添加触摸事件支持滑动
+            cell.addEventListener('touchstart', (e) => handleTouchStart(e, row, col), { passive: false });
+            cell.addEventListener('touchmove', (e) => handleTouchMove(e, row, col), { passive: false });
+            cell.addEventListener('touchend', (e) => handleTouchEnd(e, row, col), { passive: false });
+            
+            // 添加鼠标事件支持拖拽（PC端）
+            cell.addEventListener('mousedown', (e) => handleMouseDown(e, row, col));
+            cell.addEventListener('mousemove', (e) => handleMouseMove(e, row, col));
+            cell.addEventListener('mouseup', (e) => handleMouseUp(e, row, col));
+            cell.addEventListener('mouseleave', (e) => handleMouseLeave(e, row, col));
+            
+            board.appendChild(cell);
+            
+            // 生成随机水果或障碍物
+            generateCellContent(row, col, level);
+        }
+    }
+    
+    // 确保没有初始匹配
+    while (findMatches().length > 0) {
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                generateCellContent(row, col, level);
+            }
+        }
+    }
+    
+    renderBoard();
+}
+
+// 生成单元格内容
+function generateCellContent(row, col, level) {
+    // 根据关卡配置生成障碍物
+    if (level.obstacles && Math.random() < 0.1) {
+        const obstacleType = level.obstacles[Math.floor(Math.random() * level.obstacles.length)];
+        gameState.board[row][col] = {
+            type: 'obstacle',
+            subtype: obstacleType,
+            health: OBSTACLES[obstacleType.toUpperCase()].health
+        };
+        return;
+    }
+    
+    // 生成水果
+    const availableFruits = level.fruits || ['apple', 'orange', 'banana', 'grape'];
+    const fruitType = availableFruits[Math.floor(Math.random() * availableFruits.length)];
+    
+    gameState.board[row][col] = {
+        type: 'fruit',
+        subtype: fruitType
+    };
+}
+
+// 渲染游戏面板
+function renderBoard() {
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+            const cellData = gameState.board[row][col];
+            
+            if (!cellData) {
+                cell.textContent = '';
+                cell.className = 'game-cell';
+                continue;
+            }
+            
+            if (cellData.type === 'fruit') {
+                const fruit = FRUITS[cellData.subtype.toUpperCase()];
+                cell.textContent = fruit.symbol;
+                cell.className = `game-cell ${fruit.class}`;
+            } else if (cellData.type === 'obstacle') {
+                const obstacle = OBSTACLES[cellData.subtype.toUpperCase()];
+                cell.textContent = obstacle.symbol;
+                cell.className = `game-cell ${obstacle.class}`;
+            }
+        }
+    }
+}
+
+// 更新游戏UI
+function updateGameUI() {
+    document.getElementById('current-score').textContent = gameState.score.toLocaleString();
+    document.getElementById('moves-left').textContent = gameState.moves;
+    
+    // 更新进度
+    const level = LEVELS[gameState.currentLevel];
+    const progress = getProgress(level);
+    
+    // 检查关卡完成条件
+    if (checkLevelComplete(level)) {
+        completeLevel();
+    } else if (gameState.moves <= 0) {
+        gameOver();
+    }
+}
+
+// 获取关卡进度
+function getProgress(level) {
+    switch(level.targetType) {
+        case 'score':
+            return Math.min(gameState.score / level.target, 1);
+        case 'apple':
+        case 'orange':
+        case 'banana':
+        case 'grape':
+        case 'strawberry':
+        case 'cherry':
+        case 'lemon':
+        case 'watermelon':
+            // 这里需要跟踪消除的特定水果数量
+            return 0; // 简化实现
+        case 'ice':
+        case 'chain':
+            // 这里需要跟踪破坏的障碍物数量
+            return 0; // 简化实现
+        default:
+            return 0;
+    }
+}
+
+// 检查关卡完成
+function checkLevelComplete(level) {
+    switch(level.targetType) {
+        case 'score':
+            return gameState.score >= level.target;
+        default:
+            return false; // 简化实现
+    }
+}
+
+// 单元格点击处理
+function cellClick(row, col) {
+    if (!gameState.isGameActive) return;
+    
+    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    
+    if (gameState.selectedCell) {
+        const selectedRow = parseInt(gameState.selectedCell.dataset.row);
+        const selectedCol = parseInt(gameState.selectedCell.dataset.col);
+        
+        if (selectedRow === row && selectedCol === col) {
+            // 取消选择
+            gameState.selectedCell.classList.remove('selected');
+            gameState.selectedCell = null;
+        } else if (isAdjacent(selectedRow, selectedCol, row, col)) {
+            // 交换水果
+            swapCells(selectedRow, selectedCol, row, col);
+            gameState.selectedCell.classList.remove('selected');
+            gameState.selectedCell = null;
+        } else {
+            // 选择新的单元格
+            gameState.selectedCell.classList.remove('selected');
+            cell.classList.add('selected');
+            gameState.selectedCell = cell;
+        }
+    } else {
+        // 选择单元格
+        cell.classList.add('selected');
+        gameState.selectedCell = cell;
+    }
+}
+
+// 检查是否相邻
+function isAdjacent(row1, col1, row2, col2) {
+    const rowDiff = Math.abs(row1 - row2);
+    const colDiff = Math.abs(col1 - col2);
+    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+}
+
+// 交换单元格
+function swapCells(row1, col1, row2, col2) {
+    const temp = gameState.board[row1][col1];
+    gameState.board[row1][col1] = gameState.board[row2][col2];
+    gameState.board[row2][col2] = temp;
+    
+    renderBoard();
+    
+    // 检查匹配
+    const matches = findMatches();
+    if (matches.length > 0) {
+        gameState.moves--;
+        processMatches(matches);
+    } else {
+        // 如果没有匹配，撤销交换
+        setTimeout(() => {
+            gameState.board[row1][col1] = gameState.board[row2][col2];
+            gameState.board[row2][col2] = temp;
+            renderBoard();
+        }, 300);
+    }
+    
+    updateGameUI();
+}
+
+// 查找匹配
+function findMatches() {
+    const matches = [];
+    
+    // 检查水平匹配
+    for (let row = 0; row < 8; row++) {
+        let count = 1;
+        let currentType = gameState.board[row][0];
+        
+        for (let col = 1; col < 8; col++) {
+            const cellType = gameState.board[row][col];
+            
+            if (cellType && currentType && 
+                cellType.type === 'fruit' && currentType.type === 'fruit' &&
+                cellType.subtype === currentType.subtype) {
+                count++;
+            } else {
+                if (count >= 3) {
+                    for (let i = col - count; i < col; i++) {
+                        matches.push({ row, col: i });
+                    }
+                }
+                count = 1;
+                currentType = cellType;
+            }
+        }
+        
+        if (count >= 3) {
+            for (let i = 8 - count; i < 8; i++) {
+                matches.push({ row, col: i });
+            }
+        }
+    }
+    
+    // 检查垂直匹配
+    for (let col = 0; col < 8; col++) {
+        let count = 1;
+        let currentType = gameState.board[0][col];
+        
+        for (let row = 1; row < 8; row++) {
+            const cellType = gameState.board[row][col];
+            
+            if (cellType && currentType && 
+                cellType.type === 'fruit' && currentType.type === 'fruit' &&
+                cellType.subtype === currentType.subtype) {
+                count++;
+            } else {
+                if (count >= 3) {
+                    for (let i = row - count; i < row; i++) {
+                        matches.push({ row: i, col });
+                    }
+                }
+                count = 1;
+                currentType = cellType;
+            }
+        }
+        
+        if (count >= 3) {
+            for (let i = 8 - count; i < 8; i++) {
+                matches.push({ row: i, col });
+            }
+        }
+    }
+    
+    return matches;
+}
+
+// 处理匹配
+function processMatches(matches) {
+    // 增加连击
+    gameState.combo++;
+    gameState.maxCombo = Math.max(gameState.maxCombo, gameState.combo);
+    
+    // 播放音效
+    if (gameState.combo > 1) {
+        soundManager.playSound('combo');
+        showComboEffect(gameState.combo);
+    } else {
+        soundManager.playSound('match');
+    }
+    
+    // 计算分数
+    let points = 0;
+    matches.forEach(match => {
+        const cellData = gameState.board[match.row][match.col];
+        if (cellData && cellData.type === 'fruit') {
+            const fruit = FRUITS[cellData.subtype.toUpperCase()];
+            points += fruit.points * (gameState.combo || 1);
+            
+            // 创建粒子效果
+            const cell = document.querySelector(`[data-row="${match.row}"][data-col="${match.col}"]`);
+            const rect = cell.getBoundingClientRect();
+            particleSystem.createMatchEffect(
+                rect.left + rect.width / 2,
+                rect.top + rect.height / 2,
+                getComputedStyle(cell).backgroundColor
+            );
+        }
+    });
+    
+    gameState.score += points;
+    
+    // 标记匹配的单元格
+    matches.forEach(match => {
+        const cell = document.querySelector(`[data-row="${match.row}"][data-col="${match.col}"]`);
+        cell.classList.add('matching');
+        gameState.board[match.row][match.col] = null;
+    });
+    
+    // 延迟后移除匹配的单元格并下落
+    setTimeout(() => {
+        dropCells();
+        fillEmptyCells();
+        renderBoard();
+        
+        // 检查新的匹配
+        setTimeout(() => {
+            const newMatches = findMatches();
+            if (newMatches.length > 0) {
+                processMatches(newMatches);
+            } else {
+                gameState.combo = 0;
+                updateGameUI();
+            }
+        }, 300);
+    }, 500);
+}
+
+// 显示连击效果
+function showComboEffect(combo) {
+    const indicator = document.createElement('div');
+    indicator.className = 'combo-indicator';
+    indicator.textContent = `连击 x${combo}!`;
+    document.body.appendChild(indicator);
+    
+    setTimeout(() => {
+        document.body.removeChild(indicator);
+    }, 1000);
+}
+
+// 下落单元格
+function dropCells() {
+    for (let col = 0; col < 8; col++) {
+        let writeIndex = 7;
+        
+        for (let row = 7; row >= 0; row--) {
+            if (gameState.board[row][col] !== null) {
+                if (writeIndex !== row) {
+                    gameState.board[writeIndex][col] = gameState.board[row][col];
+                    gameState.board[row][col] = null;
+                    
+                    // 添加下落动画
+                    const cell = document.querySelector(`[data-row="${writeIndex}"][data-col="${col}"]`);
+                    cell.classList.add('falling');
+                }
+                writeIndex--;
+            }
+        }
+    }
+}
+
+// 填充空单元格
+function fillEmptyCells() {
+    const level = LEVELS[gameState.currentLevel];
+    
+    for (let col = 0; col < 8; col++) {
+        for (let row = 0; row < 8; row++) {
+            if (gameState.board[row][col] === null) {
+                generateCellContent(row, col, level);
+                
+                // 添加下落动画
+                const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                cell.classList.add('falling');
+            }
+        }
+    }
+}
+
+// 触摸事件处理
+function handleTouchStart(e, row, col) {
+    e.preventDefault();
+    gameState.touchStart = { row, col };
+    gameState.isDragging = true;
+    gameState.dragStartCell = { row, col };
+}
+
+function handleTouchMove(e, row, col) {
+    if (!gameState.isDragging) return;
+    e.preventDefault();
+}
+
+function handleTouchEnd(e, row, col) {
+    if (!gameState.isDragging) return;
+    e.preventDefault();
+    
+    gameState.touchEnd = { row, col };
+    
+    if (gameState.touchStart && gameState.touchEnd) {
+        const startRow = gameState.touchStart.row;
+        const startCol = gameState.touchStart.col;
+        const endRow = gameState.touchEnd.row;
+        const endCol = gameState.touchEnd.col;
+        
+        if (isAdjacent(startRow, startCol, endRow, endCol)) {
+            swapCells(startRow, startCol, endRow, endCol);
+        }
+    }
+    
+    gameState.isDragging = false;
+    gameState.touchStart = null;
+    gameState.touchEnd = null;
+}
+
+// 鼠标事件处理
+function handleMouseDown(e, row, col) {
+    gameState.isDragging = true;
+    gameState.dragStartCell = { row, col };
+    
+    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    cell.classList.add('dragging');
+}
+
+function handleMouseMove(e, row, col) {
+    if (!gameState.isDragging) return;
+}
+
+function handleMouseUp(e, row, col) {
+    if (!gameState.isDragging) return;
+    
+    const startRow = gameState.dragStartCell.row;
+    const startCol = gameState.dragStartCell.col;
+    
+    if (isAdjacent(startRow, startCol, row, col)) {
+        swapCells(startRow, startCol, row, col);
+    }
+    
+    // 移除拖拽样式
+    document.querySelectorAll('.game-cell').forEach(cell => {
+        cell.classList.remove('dragging');
+    });
+    
+    gameState.isDragging = false;
+    gameState.dragStartCell = null;
+}
+
+function handleMouseLeave(e, row, col) {
+    if (gameState.isDragging) {
+        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+        cell.classList.remove('dragging');
+    }
+}
+
+// 关卡完成
+function completeLevel() {
+    gameState.isGameActive = false;
+    soundManager.playSound('complete');
+    
+    // 计算星级
+    const level = LEVELS[gameState.currentLevel];
+    let stars = 1;
+    if (gameState.score >= level.target * 1.5) stars = 2;
+    if (gameState.score >= level.target * 2) stars = 3;
+    
+    gameState.stars = stars;
+    gameState.completedLevels.add(gameState.currentLevel);
+    
+    if (gameState.score > gameState.highScore) {
+        gameState.highScore = gameState.score;
+    }
+    
+    saveGameData();
+    
+    // 显示完成弹窗
+    showLevelComplete();
+}
+
+// 显示关卡完成弹窗
+function showLevelComplete() {
+    const modal = document.getElementById('level-complete');
+    const title = document.getElementById('complete-title');
+    const message = document.getElementById('complete-message');
+    const finalScore = document.getElementById('final-score');
+    
+    title.textContent = '关卡完成!';
+    message.textContent = `恭喜完成关卡 ${gameState.currentLevel}!`;
+    finalScore.textContent = gameState.score.toLocaleString();
+    
+    // 显示星级
+    const existingStars = modal.querySelector('.star-rating');
+    if (existingStars) {
+        existingStars.remove();
+    }
+    
+    const starRating = document.createElement('div');
+    starRating.className = 'star-rating';
+    
+    for (let i = 1; i <= 3; i++) {
+        const star = document.createElement('div');
+        star.className = `star ${i <= gameState.stars ? 'earned' : ''}`;
+        star.textContent = '⭐';
+        starRating.appendChild(star);
+    }
+    
+    modal.querySelector('.level-complete-content').insertBefore(starRating, finalScore.parentElement);
+    
+    modal.style.display = 'flex';
+}
+
+// 游戏结束
+function gameOver() {
+    gameState.isGameActive = false;
+    alert('游戏结束！没有剩余步数了。');
+    backToMenu();
+}
+
+// 返回主菜单
+function backToMenu() {
+    document.getElementById('main-menu').style.display = 'block';
+    document.getElementById('game-screen').style.display = 'none';
+    document.getElementById('level-complete').style.display = 'none';
+    updateUI();
+}
+
+// 下一关
+function nextLevel() {
+    const nextLevelNum = gameState.currentLevel + 1;
+    if (nextLevelNum <= 20) {
+        startLevel(nextLevelNum);
+        document.getElementById('level-complete').style.display = 'none';
+    } else {
+        alert('恭喜你完成了所有关卡！');
+        backToMenu();
+    }
+}
+
+// 重新开始关卡
+function restartLevel() {
+    startLevel(gameState.currentLevel);
+}
+
+// 洗牌
+function shuffleBoard() {
+    if (gameState.moves <= 0) return;
+    
+    gameState.moves--;
+    
+    // 收集所有水果
+    const fruits = [];
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            if (gameState.board[row][col] && gameState.board[row][col].type === 'fruit') {
+                fruits.push(gameState.board[row][col]);
+            }
+        }
+    }
+    
+    // 打乱水果
+    for (let i = fruits.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [fruits[i], fruits[j]] = [fruits[j], fruits[i]];
+    }
+    
+    // 重新分配水果
+    let fruitIndex = 0;
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            if (gameState.board[row][col] && gameState.board[row][col].type === 'fruit') {
+                gameState.board[row][col] = fruits[fruitIndex++];
+            }
+        }
+    }
+    
+    renderBoard();
+    updateGameUI();
+}
+
+// 暂停游戏
+function pauseGame() {
+    gameState.isGameActive = !gameState.isGameActive;
+    const btn = event.target;
+    btn.innerHTML = gameState.isGameActive ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+}
+
+// 显示帮助
+function showHelp() {
+    const helpText = `游戏规则：
+
+🎯 目标：完成每个关卡的特定目标
+
+🎮 操作：
+• 点击相邻的两个水果进行交换
+• 形成三个或更多相同水果的连线即可消除
+• 支持触摸滑动操作
+
+⭐ 评分系统：
+• 1星：完成基本目标
+• 2星：超额完成50%
+• 3星：超额完成100%
+
+🔥 连击系统：
+• 连续消除可获得连击奖励
+• 连击越高，分数越多
+
+💣 特殊水果：
+• 炸弹：消除周围9格
+• 彩虹：消除同类型所有水果
+• 闪电：消除整行或整列
+
+❄️ 障碍物：
+• 冰块：需要多次消除才能破坏
+• 锁链：阻挡水果移动
+
+💡 提示：注意步数限制！`;
+    
+    alert(helpText);
+}
+
+// 微信兼容性处理
+function setupWeChatCompatibility() {
+    // 防止微信下拉刷新
+    document.addEventListener('touchmove', function(e) {
+        if (e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+    
+    // 防止微信双击缩放
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(e) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            e.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+    
+    // 隐藏微信分享按钮（如果存在）
+    if (typeof WeixinJSBridge !== 'undefined') {
+        WeixinJSBridge.call('hideOptionMenu');
+    }
+}
+
+// 页面加载完成后初始化游戏
+document.addEventListener('DOMContentLoaded', function() {
+    initGame();
+});
+
+// 微信环境检测和优化
+if (navigator.userAgent.toLowerCase().indexOf('micromessenger') > -1) {
+    // 在微信中运行的特殊处理
+    document.body.style.webkitUserSelect = 'none';
+    document.body.style.webkitTouchCallout = 'none';
+}

@@ -1,0 +1,33 @@
+{
+  "name": "happy-crush-deluxe",
+  "version": "1.0.0",
+  "description": "开心消消乐豪华版 - 一个现代化的H5消除类游戏",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "build": "node build.js",
+    "deploy": "node deploy.js",
+    "start": "python -m http.server 8000"
+  },
+  "keywords": [
+    "game",
+    "html5",
+    "match3",
+    "puzzle",
+    "mobile",
+    "wechat"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "gh-pages": "^6.1.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/happy-crush-deluxe.git"
+  },
+  "homepage": "https://yourusername.github.io/happy-crush-deluxe",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
